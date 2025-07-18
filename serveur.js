@@ -1,52 +1,39 @@
-import express from "express";
-import mongoose from "mongoose";
-import dotenv from "dotenv";
-import shopRoutes from "./routes/shopRoutes.js";
-import cors from "cors";
-import morgan from "morgan";
+import express from 'express';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import cors from 'cors';
+import shopRoutes from './routes/shopRoutes.js';
+import productRoutes from './routes/productRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+
+
 
 dotenv.config();
 
 const app = express();
 
-// Middleware
 app.use(cors());
-app.use(morgan("dev"));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Database connection
-const PORT = process.env.PORT || 8000;
-const MONGOURL = process.env.MONGOURL || "mongodb://localhost:27017/univer-delivery";
-
-mongoose
-  .connect(MONGOURL)
+mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("Database connected successfully");
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
+    console.log('Connected to MongoDB at:', mongoose.connection.client.s.url);
+    console.log('Database name:', mongoose.connection.db.databaseName);
   })
-  .catch((err) => {
-    console.error("Database connection error:", err.message);
-    process.exit(1);
-  });
+  .catch(err => console.error('MongoDB connection error:', err));
 
-// Routes
-app.use("/api/shops", shopRoutes);
 
-// Health check endpoint
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ status: "OK", message: "Server is healthy" });
+app.use('/api/users', userRoutes);
+app.use('/api/shops', shopRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
+
+app.get('/', (req, res) => {
+  res.send('API is running...');
 });
 
-// 404 handler
-app.use((req, res, next) => {
-  res.status(404).json({ message: "Route not found" });
-});
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({ message: err.message || "Internal server error" });
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
